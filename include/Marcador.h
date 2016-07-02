@@ -18,6 +18,9 @@ class Marcador
         int y_centro;
         std::vector<std::string> pixels_xy;
         int id_proximo;
+        int r;
+        int g;
+        int b;
 
     protected:
 

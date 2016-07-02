@@ -36,6 +36,8 @@ int cinza = false;
 AVIClass Video;
 vector<Marcador> marcadores;
 vector<Marcador>::iterator it;
+vector<Marcador>::iterator it2;
+vector<Marcador> marcadorGlobal;
 int matrizAlgo2[15][15];
 int matrizAlgo21[15][15];
 int matrizAlgo22[15][15];
@@ -118,9 +120,7 @@ void MontaVetor(int Px, int Py, int Vetor[9])
 // **********************************************************************
 // void Mediana()
 // **********************************************************************
-void Mediana()
-{
-    cout << "Iniciou Mediana..." << endl;
+void Mediana(){
 
     int Vetor[9];
     int x, y, mediana;
@@ -134,9 +134,6 @@ void Mediana()
             Video.DrawPixel(x,y,mediana,mediana,mediana);
         }
     }
-
-    cout << "Concluiu Mediana." << endl;
-
 }
 
 
@@ -192,6 +189,33 @@ void CalculaNivelDeZoom(float &ZoomH, float &ZoomV)
 {
      ZoomH = (float)glutGet(GLUT_WINDOW_WIDTH)/Video.SizeX();
      ZoomV = (float)glutGet(GLUT_WINDOW_HEIGHT)/Video.SizeY();
+}
+
+int distanciaEuclidianaEntrePontos(int x1, int y1, int x2, int y2) {
+    int distancia;
+    distancia = sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
+    return distancia;
+}
+
+// **********************************************************************
+//  void DesenhaEsqueleto(int frame)
+// **********************************************************************
+void DesenhaEsqueleto(int pframe){
+
+    int distancia_menor_temp = 999999;
+    int x_centro_dest = 0;
+    int y_centro_dest = 0;
+    int distancia_temp;
+    int proximo = 0;
+
+    //desenha esqueleto
+    for (it = marcadorGlobal.begin(); it != marcadorGlobal.end(); ++it) {
+        for (it2 = marcadorGlobal.begin(); it2 != marcadorGlobal.end(); ++it2) {
+            if(it->id_proximo==it2->id_marcador && pframe==it->num_frame && pframe==it2->num_frame){
+                Video.DrawLine(it->x_centro, it->y_centro, it2->x_centro, it2->y_centro, 255, 255, 255);
+            }
+        }
+    }
 }
 
 // **********************************************************************
@@ -272,14 +296,97 @@ void leMarcador(int x, int y, AVIClass V, Marcador &marcador){
     }
 }
 
-int distanciaEuclidianaEntrePontos(int x1, int y1, int x2, int y2) {
-    int distancia;
-    distancia = sqrt(((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1)));
-    return distancia;
+void calculaCentro(Marcador &marcador){
+    int x_menor = 999999;
+    int x_maior = 0;
+    int y_menor = 999999;
+    int y_maior = 0;
+    int x,y;
+
+    //imprime os pixels do marcador
+    std::vector<std::string> rtemp;
+    std::string ctemp;
+    for(int q=0; q<marcador.pixels_xy.size(); ++q){
+        ctemp = marcador.pixels_xy[q];
+        rtemp = explode(ctemp, '-');
+        std::istringstream sx(rtemp[0]);
+        sx >> x;
+        sx.str( std::string() );
+        sx.clear();
+        std::istringstream sy(rtemp[1]);
+        sy >> y;
+        sy.str( std::string() );
+        sy.clear();
+
+        //pega pixel mais a esquerda e mais a direita
+        if(x>x_maior){ x_maior = x; }
+        if(x<x_menor){ x_menor = x; }
+        if(y>y_maior){ y_maior = y; }
+        if(y<y_menor){ y_menor = y; }
+    }
+
+    int x_raio = ((int)(x_maior - x_menor) / 2);
+    int y_raio = ((int)(y_maior - y_menor) / 2);
+    if(x_raio!=500000&&y_raio!=500000){
+        marcador.x_centro = x_raio + x_menor;
+        marcador.y_centro = y_raio + y_menor;
+    } else {
+        marcador.x_centro = 1;
+        marcador.y_centro = 1;
+    }
+}
+
+int retornarRGB(int id, char cor){
+    switch(id){
+        case 1: if(cor=='r'){ return 255; } else if(cor=='g'){ return 100; } else { return 150; } break;
+        case 2: if(cor=='r'){ return 100; } else if(cor=='g'){ return 200; } else { return 250; } break;
+        case 3: if(cor=='r'){ return 0; } else if(cor=='g'){ return 150; } else { return 50; } break;
+        case 4: if(cor=='r'){ return 150; } else if(cor=='g'){ return 255; } else { return 120; } break;
+        case 5: if(cor=='r'){ return 75; } else if(cor=='g'){ return 50; } else { return 140; } break;
+        case 6: if(cor=='r'){ return 60; } else if(cor=='g'){ return 150; } else { return 100; } break;
+        case 7: if(cor=='r'){ return 40; } else if(cor=='g'){ return 100; } else { return 250; } break;
+        case 8: if(cor=='r'){ return 20; } else if(cor=='g'){ return 255; } else { return 80; } break;
+        case 9: if(cor=='r'){ return 90; } else if(cor=='g'){ return 50; } else { return 175; } break;
+        case 10: if(cor=='r'){ return 10; } else if(cor=='g'){ return 20; } else { return 130; } break;
+        case 11: if(cor=='r'){ return 250; } else if(cor=='g'){ return 10; } else { return 180; } break;
+        case 12: if(cor=='r'){ return 200; } else if(cor=='g'){ return 150; } else { return 100; } break;
+        case 13: if(cor=='r'){ return 75; } else if(cor=='g'){ return 100; } else { return 90; } break;
+        case 14: if(cor=='r'){ return 80; } else if(cor=='g'){ return 90; } else { return 50; } break;
+        case 15: if(cor=='r'){ return 55; } else if(cor=='g'){ return 255; } else { return 120; } break;
+        case 16: if(cor=='r'){ return 25; } else if(cor=='g'){ return 200; } else { return 255; } break;
+        case 17: if(cor=='r'){ return 35; } else if(cor=='g'){ return 50; } else { return 25; } break;
+        case 18: if(cor=='r'){ return 90; } else if(cor=='g'){ return 20; } else { return 120; } break;
+        case 19: if(cor=='r'){ return 10; } else if(cor=='g'){ return 10; } else { return 75; } break;
+        case 20: if(cor=='r'){ return 15; } else if(cor=='g'){ return 90; } else { return 120; } break;
+        case 21: if(cor=='r'){ return 100; } else if(cor=='g'){ return 120; } else { return 120; } break;
+        case 22: if(cor=='r'){ return 250; } else if(cor=='g'){ return 180; } else { return 100; } break;
+        case 23: if(cor=='r'){ return 200; } else if(cor=='g'){ return 160; } else { return 20; } break;
+        case 24: if(cor=='r'){ return 120; } else if(cor=='g'){ return 90; } else { return 30; } break;
+        case 25: if(cor=='r'){ return 80; } else if(cor=='g'){ return 50; } else { return 255; } break;
+    }
+}
+
+void pintaMarcador(AVIClass V, Marcador &marcador){
+    std::vector<std::string> rtemp;
+    std::string ctemp;
+    int x,y;
+    for(int q=0; q<marcador.pixels_xy.size(); ++q){
+        ctemp = marcador.pixels_xy[q];
+        rtemp = explode(ctemp, '-');
+        std::istringstream sx(rtemp[0]);
+        sx >> x;
+        sx.str( std::string() );
+        sx.clear();
+        std::istringstream sy(rtemp[1]);
+        sy >> y;
+        sy.str( std::string() );
+        sy.clear();
+        V.DrawPixel(x, y, marcador.r, marcador.g, marcador.b);
+    }
 }
 
 // **********************************************************************
-//  void carregaMarcadores(ImageClass *Img)
+//  void carregaMarcadores(ImageClass *Img)//pinta o marcador no novo frame
 // **********************************************************************
 void carregaMarcadores(AVIClass V, int frame){
 
@@ -293,10 +400,6 @@ void carregaMarcadores(AVIClass V, int frame){
     vector<Marcador>::iterator it;
     vector<Marcador>::iterator it2;
     int x_mar8aux;
-    int distancia_temp;
-    int distancia_menor_temp = 999999;
-    int x_centro_dest;
-    int y_centro_dest;
 
     stringstream ss;
     ss << frame;
@@ -305,560 +408,206 @@ void carregaMarcadores(AVIClass V, int frame){
     ss.clear();
 
     //flood fill guardando os marcadores
-    for(x=0;x<V.SizeX();x++){
-        for(y=0;y<V.SizeY();y++){
-            i = V.GetPointIntensity(x,y);
-            V.ReadPixel(x,y, r,g,b);
-            if (i>235 && g<255){
-                Marcador *m0 = new Marcador;
-                m0->id_marcador = k+1;
-                m0->num_frame = frame;
-                leMarcador(x,y,V,*m0);
-                marcadores.push_back(*m0);
-                k++;
-            }
-        }
-    }
+    if(frame==1){
+        for(x=0;x<V.SizeX();x++){
+            for(y=0;y<V.SizeY();y++){
+                if(x==159&&y==250||x==195&&y==271||x==199&&y==239||x==200&&y==356||x==246&&y==212||x==255&&y==325||x==257&&y==382||x==279&&y==349||x==284&&y==92||x==291&&y==209||x==299&&y==312||x==318&&y==135){
+                    i = V.GetPointIntensity(x,y);
+                    V.ReadPixel(x,y, r,g,b);
+                    if (i>235 && g<255){
+                        Marcador *m0 = new Marcador;
+                        m0->id_marcador = k+1;
+                        m0->num_frame = frame;
+                        leMarcador(x,y,V,*m0);
+                        if(frame==1){
+                            m0->r = retornarRGB(k+1, 'r');
+                            m0->g = retornarRGB(k+1, 'g');
+                            m0->b = retornarRGB(k+1, 'b');
+                            pintaMarcador(V, *m0);
+                        }
 
-    //gera arquivo de saida
-    ofstream outputFile;
-    outputFile.open("saida.txt", std::ios_base::app);
-    outputFile << endl << ">>>>>>FRAME " + frame_desc << endl;
-    int x_maior=0, x_menor=999999;
-    int y_maior=0, y_menor=999999;
-    int x_centro_ant;
-    int y_centro_ant;
-
-    //imprime o array de marcadores
-    for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-        outputFile << "Marcador: " << it->id_marcador << endl;
-        outputFile << "Tamanho: ";
-        outputFile <<  it->pixels_xy.size();
-        outputFile << " px" << endl;
-
-        x_menor = 999999;
-        x_maior = 0;
-        y_menor = 999999;
-        y_maior = 0;
-
-        //imprime os pixels do marcador
-        std::vector<std::string> rtemp;
-        std::string ctemp;
-        for(int q=0; q<it->pixels_xy.size(); ++q){
-            ctemp = it->pixels_xy[q];
-            rtemp = explode(ctemp, '-');
-            std::istringstream sx(rtemp[0]);
-            sx >> x;
-            sx.str( std::string() );
-            sx.clear();
-            std::istringstream sy(rtemp[1]);
-            sy >> y;
-            sy.str( std::string() );
-            sy.clear();
-
-            //pega pixel mais a esquerda e mais a direita
-            if(x>x_maior){ x_maior = x; }
-            if(x<x_menor){ x_menor = x; }
-            if(y>y_maior){ y_maior = y; }
-            if(y<y_menor){ y_menor = y; }
-        }
-
-        int x_raio = ((int)(x_maior - x_menor) / 2);
-        int y_raio = ((int)(y_maior - y_menor) / 2);
-        if(x_raio!=500000&&y_raio!=500000){
-            it->x_centro = x_raio + x_menor;
-            it->y_centro = y_raio + y_menor;
-        } else {
-            it->x_centro = 1;
-            it->y_centro = 1;
-        }
-
-        outputFile << "Centro: ";
-        outputFile <<  it->x_centro;
-        outputFile << " x ";
-        outputFile <<  it->y_centro << endl;
-        if(it->x_centro<=640 && it->y_centro<=480){
-            //V.DrawPixel(it->x_centro,  it->y_centro, 0, 0, 0 );
-        }
-    }
-    outputFile.close();
-
-    //desenha esqueleto
-    //para cada ponto calcula a distancia euclidiana do mais proximo
-    /*for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-        for (it2 = marcadores.begin(); it2 != marcadores.end(); ++it2) {
-            if(it->id_marcador != it2->id_marcador && it2->id_proximo!=it->id_marcador){
-
-                distancia_temp = distanciaEuclidianaEntrePontos(it->x_centro, it->y_centro, it2->x_centro, it2->y_centro);
-                if(distancia_temp<distancia_menor_temp){
-                    distancia_menor_temp = distancia_temp;
-                    x_centro_dest = it2->x_centro;
-                    y_centro_dest = it2->y_centro;
-                    it->id_proximo = it2->id_marcador;
+                        marcadores.push_back(*m0);
+                        k++;
+                    }
                 }
             }
         }
 
-        if(it->x_centro!=500000||it->y_centro!=500000){
-            cout << x_centro_dest << "-" << y_centro_dest << " x " << it->x_centro << "-" << it->y_centro << endl;
-            V.DrawLine(it->x_centro, it->y_centro, x_centro_dest, y_centro_dest, 255, 255, 255);
-        }
+        //gera arquivo de saida
+        ofstream outputFile;
+        outputFile.open("saida.txt", std::ios_base::app);
+        outputFile << endl << ">>>>>>FRAME " + frame_desc << endl;
+        int x_maior=0, x_menor=999999;
+        int y_maior=0, y_menor=999999;
+        int x_centro_ant;
+        int y_centro_ant;
 
-        distancia_menor_temp = 999999;
-        x_centro_dest = 0;
-        y_centro_dest = 0;
-    }*/
-
-    //a partir do 3o frame identifica um dos marcadores e passa a acompanhá-lo frame a frame
-    //usando os algoritmos solicitados
-    if(frame==3){
+        //imprime o array de marcadores
         for (it = marcadores.begin(); it != marcadores.end(); ++it) {
+            outputFile << "Marcador: " << it->id_marcador << endl;
+            outputFile << "Tamanho: ";
+            outputFile <<  it->pixels_xy.size();
+            outputFile << " px" << endl;
+
+            //atribui esqueleto
+            if(it->id_marcador==11){ it->id_proximo = 6; }
+            if(it->id_marcador==6){ it->id_proximo = 8; }
+            if(it->id_marcador==8){ it->id_proximo = 7; }
+            if(it->id_marcador==7){ it->id_proximo = 4; }
+            if(it->id_marcador==4){ it->id_proximo = 2; }
+            if(it->id_marcador==2){ it->id_proximo = 1; }
+            if(it->id_marcador==1){ it->id_proximo = 3; }
+            if(it->id_marcador==3){ it->id_proximo = 5; }
+            if(it->id_marcador==5){ it->id_proximo = 10; }
+            if(it->id_marcador==10){ it->id_proximo = 12; }
+            if(it->id_marcador==12){ it->id_proximo = 9; }
+
+            x_menor = 999999;
+            x_maior = 0;
+            y_menor = 999999;
+            y_maior = 0;
+
+            //imprime os pixels do marcador
             std::vector<std::string> rtemp;
             std::string ctemp;
-            if(it->id_marcador==14){
-                x_mar14 = it->x_centro;
-                y_mar14 = it->y_centro;
+            for(int q=0; q<it->pixels_xy.size(); ++q){
+                ctemp = it->pixels_xy[q];
+                rtemp = explode(ctemp, '-');
+                std::istringstream sx(rtemp[0]);
+                sx >> x;
+                sx.str( std::string() );
+                sx.clear();
+                std::istringstream sy(rtemp[1]);
+                sy >> y;
+                sy.str( std::string() );
+                sy.clear();
 
-                for(int q=0; q<it->pixels_xy.size(); ++q){
-                    ctemp = it->pixels_xy[q];
-                    rtemp = explode(ctemp, '-');
-                    std::istringstream sx(rtemp[0]);
-                    sx >> x;
-                    sx.str( std::string() );
-                    sx.clear();
-                    std::istringstream sy(rtemp[1]);
-                    sy >> y;
-                    sy.str( std::string() );
-                    sy.clear();
-                    V.DrawPixel(x, y, 255, 0, 0 );
-                }
+                //pega pixel mais a esquerda e mais a direita
+                if(x>x_maior){ x_maior = x; }
+                if(x<x_menor){ x_menor = x; }
+                if(y>y_maior){ y_maior = y; }
+                if(y<y_menor){ y_menor = y; }
             }
 
-            if(it->id_marcador==11){
-                x_mar11 = it->x_centro;
-                y_mar11 = it->y_centro;
-
-                for(int q=0; q<it->pixels_xy.size(); ++q){
-                    ctemp = it->pixels_xy[q];
-                    rtemp = explode(ctemp, '-');
-                    std::istringstream sx(rtemp[0]);
-                    sx >> x;
-                    sx.str( std::string() );
-                    sx.clear();
-                    std::istringstream sy(rtemp[1]);
-                    sy >> y;
-                    sy.str( std::string() );
-                    sy.clear();
-                    V.DrawPixel(x, y, 100, 50, 0 );
-                }
+            int x_raio = ((int)(x_maior - x_menor) / 2);
+            int y_raio = ((int)(y_maior - y_menor) / 2);
+            if(x_raio!=500000&&y_raio!=500000){
+                it->x_centro = x_raio + x_menor;
+                it->y_centro = y_raio + y_menor;
+            } else {
+                it->x_centro = 1;
+                it->y_centro = 1;
             }
 
-/*            if(it->id_marcador==15){
-                x_mar15 = it->x_centro;
-                y_mar15 = it->y_centro;
-
-                //pinta marcador de azul
-                for(int q=0; q<it->pixels_xy.size(); ++q){
-                    ctemp = it->pixels_xy[q];
-                    rtemp = explode(ctemp, '-');
-                    std::istringstream sx(rtemp[0]);
-                    sx >> x;
-                    sx.str( std::string() );
-                    sx.clear();
-                    std::istringstream sy(rtemp[1]);
-                    sy >> y;
-                    sy.str( std::string() );
-                    sy.clear();
-                    V.DrawPixel(x, y, 0, 50, 100 );
-                }
+            outputFile << "Centro: ";
+            outputFile <<  it->x_centro;
+            outputFile << " x ";
+            outputFile <<  it->y_centro << endl;
+            outputFile << "Proximo: ";
+            outputFile <<  it->id_proximo << endl;
+            if(it->x_centro<=640 && it->y_centro<=480){
+                //V.DrawPixel(it->x_centro,  it->y_centro, 0, 0, 0 );
             }
-*/
-
-            if(it->id_marcador==15){
-                x_mar15 = it->x_centro;
-                y_mar15 = it->y_centro;
-
-                const int x_mar15aux = x_mar15;
-                const int y_mar15aux = y_mar15;
-
-                x_mar15aux2 = x_mar15aux;
-                y_mar15aux2 = y_mar15aux;
-
-                for(int q=0; q<it->pixels_xy.size(); ++q){
-                    ctemp = it->pixels_xy[q];
-                    rtemp = explode(ctemp, '-');
-                    std::istringstream sx(rtemp[0]);
-                    sx >> x;
-                    sx.str( std::string() );
-                    sx.clear();
-                    std::istringstream sy(rtemp[1]);
-                    sy >> y;
-                    sy.str( std::string() );
-                    sy.clear();
-                    V.DrawPixel(x, y, 50, 0, 250 );
-                }
-            }
-
-            if(it->id_marcador==8){
-                x_mar8 = it->x_centro;
-                y_mar8 = it->y_centro;
-
-                const int x_mar8aux = x_mar8;
-                const int y_mar8aux = y_mar8;
-
-                //monta matriz real do marcador 8 para execução do algoritmo 2
-                int k1=0;
-                int k2=0;
-                for(int x2=x_mar8-7; x2<=x_mar8+7;++x2){
-                    k2=0;
-                    for(int y2=y_mar8-7; y2<=y_mar8+7;++y2){
-                        if(V.GetPointIntensity(x2,y2)>100){
-                            matrizAlgo2[k1][k2] = 1;
-                        } else {
-                            matrizAlgo2[k1][k2] = 0;
-                        }
-                        cout << matrizAlgo2[k1][k2] << " ";
-                        k2++;
-                    }
-                    cout << endl;
-                    k1++;
-                } cout << "ANTES " << x_mar8aux << endl;
-
-                x_mar8aux2 = x_mar8aux;
-                y_mar8aux2 = y_mar8aux;
-
-                //pinta marcador de azul
-                for(int q=0; q<it->pixels_xy.size(); ++q){
-                    ctemp = it->pixels_xy[q];
-                    rtemp = explode(ctemp, '-');
-                    std::istringstream sx(rtemp[0]);
-                    sx >> x;
-                    sx.str( std::string() );
-                    sx.clear();
-                    std::istringstream sy(rtemp[1]);
-                    sy >> y;
-                    sy.str( std::string() );
-                    sy.clear();
-                    V.DrawPixel(x, y, 50, 0, 250 );
-                }
-            }
+            marcadorGlobal.push_back(*it);
         }
+        outputFile.close();
     }
 
-    //localiza o marcador 15 (pé) nos frames 4 e 5 com base na distancia entre os pontos
-    if(frame>=4){
+    int distancia_menor = 999999;
+    int distancia;
+    int r1;
+    int g1;
+    int b1;
+    int x_centro;
+    int y_centro;
+    int id_proximo;
+    int m=0;
+    k=0;
+    vector<string> pixels_xytemp;
 
-        int distancia_menor = 999999;
-        int distancia;
-        vector<string> pixels;
-        for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-            if(it->num_frame==frame){
-                distancia = distanciaEuclidianaEntrePontos(x_mar14, y_mar14, it->x_centro, it->y_centro);
-                if(distancia<distancia_menor){
-                    distancia_menor = distancia;
-                    pixels = it->pixels_xy;
+    if(frame>=2){
+        k = 0;
+        //para cada marcador no frame anterior
+        for (int h = 0; h < marcadorGlobal.size(); ++h) {
+            if(marcadorGlobal[h].num_frame==frame-1){
+                distancia_menor = 999999;
+                distancia = 0;
+                x_centro = marcadorGlobal[h].x_centro;
+                y_centro = marcadorGlobal[h].y_centro;
+
+                //busca pelo marcador mais proximo usando limiar e flood fill
+                for(int x=x_centro-20;x<x_centro+20;x++){
+                    for(int y=y_centro-20;y<y_centro+20;y++){
+                        i = V.GetPointIntensity(x,y);
+                        V.ReadPixel(x,y, r,g,b);
+                        if (i>235 && g<255){
+                            Marcador *m0 = new Marcador;
+                            m0->id_marcador = k+1;
+                            m0->num_frame = frame;
+                            leMarcador(x,y,V,*m0);
+                            calculaCentro(*m0);
+                            marcadores.push_back(*m0);
+                            k++;
+                        }
+                    }
+                }
+
+                for (it = marcadores.begin(); it != marcadores.end(); ++it) {
+
+                    //se for no frame corrente
+                    if(it->num_frame==frame){
+                        distancia = distanciaEuclidianaEntrePontos(marcadorGlobal[h].x_centro, marcadorGlobal[h].y_centro, it->x_centro, it->y_centro);
+
+                        if(distancia<distancia_menor){
+                            distancia_menor = distancia;
+
+                            //pega a cor do marcador no frame anterior
+                            r1 = marcadorGlobal[h].r;
+                            g1 = marcadorGlobal[h].g;
+                            b1 = marcadorGlobal[h].b;
+                            pixels_xytemp = it->pixels_xy;
+                            x_centro = it->x_centro;
+                            y_centro = it->y_centro;
+                            id_proximo = marcadorGlobal[h].id_proximo;
+                        }
+                    }
+
+
+
+                }
+
+                Marcador *m1 = new Marcador;
+                m1->id_marcador = m+1;
+                m1->r = r1;
+                m1->g = g1;
+                m1->b = b1;
+                m1->num_frame = frame;
+                m1->x_centro = x_centro;
+                m1->y_centro = y_centro;
+                m1->id_proximo = id_proximo;
+                m1->pixels_xy = pixels_xytemp;
+                //marcadores.push_back(*m1);
+                marcadorGlobal.push_back(*m1);
+                m++;
+
+                //pinta o marcador no novo frame
+                std::vector<std::string> rtemp;
+                std::string ctemp;
+                for(int q=0; q<pixels_xytemp.size(); ++q){
+                    ctemp = pixels_xytemp[q];
+                    rtemp = explode(ctemp, '-');
+                    std::istringstream sx(rtemp[0]);
+                    sx >> x;
+                    sx.str( std::string() );
+                    sx.clear();
+                    std::istringstream sy(rtemp[1]);
+                    sy >> y;
+                    sy.str( std::string() );
+                    sy.clear();
+                    V.DrawPixel(x, y, r1, g1, b1);
                 }
             }
         }
-
-        std::vector<std::string> rtemp;
-        std::string ctemp;
-        for(int q=0; q<pixels.size(); ++q){
-            ctemp = pixels[q];
-            rtemp = explode(ctemp, '-');
-            std::istringstream sx(rtemp[0]);
-            sx >> x;
-            sx.str( std::string() );
-            sx.clear();
-            std::istringstream sy(rtemp[1]);
-            sy >> y;
-            sy.str( std::string() );
-            sy.clear();
-            V.DrawPixel(x, y, 255, 0, 0 );
-            x_mar14 = x;
-            y_mar14 = y;
-        }
-
-        distancia_menor = 999999;
-        distancia;
-        vector<string> pixels2;
-        for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-            if(it->num_frame==frame){
-                distancia = distanciaEuclidianaEntrePontos(x_mar11, y_mar11, it->x_centro, it->y_centro);
-                if(distancia<distancia_menor){
-                    distancia_menor = distancia;
-                    pixels2 = it->pixels_xy;
-                }
-            }
-        }
-
-        std::vector<std::string> rtemp2;
-        std::string ctemp2;
-        for(int q=0; q<pixels2.size(); ++q){
-            ctemp2 = pixels2[q];
-            rtemp2 = explode(ctemp2, '-');
-            std::istringstream sx(rtemp2[0]);
-            sx >> x;
-            sx.str( std::string() );
-            sx.clear();
-            std::istringstream sy(rtemp2[1]);
-            sy >> y;
-            sy.str( std::string() );
-            sy.clear();
-            V.DrawPixel(x, y, 100, 50, 0 );
-            x_mar11 = x;
-            y_mar11 = y;
-        }
-
-        distancia_menor = 999999;
-        distancia;
-        vector<string> pixels3;
-        for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-            if(it->num_frame==frame){
-                distancia = distanciaEuclidianaEntrePontos(x_mar8, y_mar8, it->x_centro, it->y_centro);
-                if(distancia<distancia_menor){
-                    distancia_menor = distancia;
-                    pixels3 = it->pixels_xy;
-                }
-            }
-        }
-
-        std::vector<std::string> rtemp3;
-        std::string ctemp3;
-        for(int q=0; q<pixels3.size(); ++q){
-            ctemp3 = pixels3[q];
-            rtemp3 = explode(ctemp3, '-');
-            std::istringstream sx(rtemp3[0]);
-            sx >> x;
-            sx.str( std::string() );
-            sx.clear();
-            std::istringstream sy(rtemp3[1]);
-            sy >> y;
-            sy.str( std::string() );
-            sy.clear();
-            V.DrawPixel(x, y, 50, 0, 250 );
-            x_mar8 = x;
-            y_mar8 = y;
-        }
-
-        distancia_menor = 999999;
-        distancia;
-        vector<string> pixels4;
-        for (it = marcadores.begin(); it != marcadores.end(); ++it) {
-            if(it->num_frame==frame){
-                distancia = distanciaEuclidianaEntrePontos(x_mar15, y_mar15, it->x_centro, it->y_centro);
-                if(distancia<distancia_menor){
-                    distancia_menor = distancia;
-                    pixels4 = it->pixels_xy;
-                }
-            }
-        }
-
-        std::vector<std::string> rtemp4;
-        std::string ctemp4;
-        for(int q=0; q<pixels4.size(); ++q){
-            ctemp4 = pixels4[q];
-            rtemp4 = explode(ctemp4, '-');
-            std::istringstream sx(rtemp4[0]);
-            sx >> x;
-            sx.str( std::string() );
-            sx.clear();
-            std::istringstream sy(rtemp4[1]);
-            sy >> y;
-            sy.str( std::string() );
-            sy.clear();
-            V.DrawPixel(x, y, 50, 0, 250 );
-            x_mar15 = x;
-            y_mar15 = y;
-        }
-
-        V.DrawLine(x_mar8, y_mar8, x_mar15, y_mar15, 255, 255, 255);
-        distancia = distanciaEuclidianaEntrePontos(x_mar8, y_mar8, x_mar15, y_mar15);
-        cout << "Frame " << frame << ": 8x15 => " << distancia << endl;
-
-        distancia = distanciaEuclidianaEntrePontos(x_mar8, y_mar8, x_mar11, y_mar11);
-        cout << "Frame " << frame << ": 8x11 => " << distancia << endl;
-
-        distancia = distanciaEuclidianaEntrePontos(x_mar8, y_mar8, x_mar14, y_mar14);
-        cout << "Frame " << frame << ": 8x14 => " << distancia << endl;
-
-
-        //para cada frame deve executar 5 vezes a busca por comparação (meio e cruz)
-        //monta nova matriz do marcador 8 para execução do algoritmo 2
-        //cout << "centro" << endl;
-        bool loop1=true;
-        int x_novoponto = 0;
-        int y_novoponto = 0;
-        int k1 = 0;
-        int k2 = 0;
-        for(int x2=x_mar8aux2-7; x2<=x_mar8aux2+7;++x2){
-            k2 = 0;
-            for(int y2=y_mar8aux2-7; y2<=y_mar8aux2+7;++y2){
-                if(V.GetPointIntensity(x2,y2)>100){
-                    matrizAlgo21[k1][k2] = 1;
-                } else {
-                    matrizAlgo21[k1][k2] = 0;
-                }
-                if(k==113){  x_novoponto=x2; y_novoponto=y2; }
-                //cout << matrizAlgo21[k1][k2] << " ";
-                k2++;
-            }
-            //cout << endl;
-            k1++;
-        }
-
-        //cout << endl;
-        int result1=0;
-        for(int c1=0; c1<=15;++c1){
-            for(int c2=0; c2<=15;++c2){
-                if(matrizAlgo2[c1][c2]!=matrizAlgo21[c1][c2]){
-                    result1 = result1 + 1;
-                }
-            }
-        }
-        //cout << endl;
-        //cout << "Resultado centro: " << result1 << " " <<endl ;
-
-
-
-        //cout << "1" << endl;
-        bool loop4=true;
-        x_novoponto = 0;
-        y_novoponto = 0;
-        k1 = 0;
-        k2 = 0;
-        for(int x2=x_mar8aux2-14; x2<=x_mar8aux2;++x2){
-            k2 = 0;
-            for(int y2=y_mar8aux2-7; y2<=y_mar8aux2+7;++y2){
-                if(V.GetPointIntensity(x2,y2)>100){
-                    matrizAlgo24[k1][k2] = 1;
-                } else {
-                    matrizAlgo24[k1][k2] = 0;
-                }
-                if(k==113){  x_novoponto=x2; y_novoponto=y2; }
-                //cout << matrizAlgo24[k1][k2] << " ";
-                k2++;
-            }
-            //cout << endl;
-            k1++;
-        }
-
-        //cout << endl;
-        int result2=0;
-        for(int c1=0; c1<=15;++c1){
-            for(int c2=0; c2<=15;++c2){
-                if(matrizAlgo2[c1][c2]!=matrizAlgo22[c1][c2]){
-                    result2 = result2 + 1;
-                }
-            }
-        }
-        //cout << endl;
-        //cout << "Resultado 1: " << result2 << " " <<endl ;
-
-
-        //cout << "2" << endl;
-        bool loop5=true;
-        x_novoponto = 0;
-        y_novoponto = 0;
-        k1 = 0;
-        k2 = 0;
-        for(int x2=x_mar8aux2; x2<=x_mar8aux2+14;++x2){
-            k2 = 0;
-            for(int y2=y_mar8aux2-7; y2<=y_mar8aux2+7;++y2){
-                if(V.GetPointIntensity(x2,y2)>100){
-                    matrizAlgo25[k1][k2] = 1;
-                } else {
-                    matrizAlgo25[k1][k2] = 0;
-                }
-                if(k==113){  x_novoponto=x2; y_novoponto=y2; }
-                //cout << matrizAlgo25[k1][k2] << " ";
-                k2++;
-            }
-            //cout << endl;
-            k1++;
-        }
-
-        //cout << endl;
-        int result3=0;
-        for(int c1=0; c1<=15;++c1){
-            for(int c2=0; c2<=15;++c2){
-                if(matrizAlgo2[c1][c2]!=matrizAlgo23[c1][c2]){
-                    result3 = result3 + 1;
-                }
-            }
-        }
-        //cout << endl;
-        //cout << "Resultado 2: " << result3 << " " <<endl ;
-
-
-        //cout << "3" << endl;
-        bool loop6=true;
-        x_novoponto = 0;
-        y_novoponto = 0;
-        k1 = 0;
-        k2 = 0;
-        for(int x2=x_mar8aux2-7; x2<=x_mar8aux2+7;++x2){
-            k2 = 0;
-            for(int y2=y_mar8aux2-14; y2<=y_mar8aux2;++y2){
-                if(V.GetPointIntensity(x2,y2)>100){
-                    matrizAlgo26[k1][k2] = 1;
-                } else {
-                    matrizAlgo26[k1][k2] = 0;
-                }
-                if(k==113){  x_novoponto=x2; y_novoponto=y2; }
-                //cout << matrizAlgo26[k1][k2] << " ";
-                k2++;
-            }
-            //cout << endl;
-            k1++;
-        }
-
-        //cout << endl;
-        int result4=0;
-        for(int c1=0; c1<=15;++c1){
-            for(int c2=0; c2<=15;++c2){
-                if(matrizAlgo2[c1][c2]!=matrizAlgo24[c1][c2]){
-                    result4 = result4 + 1;
-                }
-            }
-        }
-        //cout << endl;
-        //cout << "Resultado 3: " << result4 << " " <<endl ;
-
-
-        //cout << "4" << endl;
-        bool loop7=true;
-        x_novoponto = 0;
-        y_novoponto = 0;
-        k1 = 0;
-        k2 = 0;
-        for(int x2=x_mar8aux2-7; x2<=x_mar8aux2+7;++x2){
-            k2 = 0;
-            for(int y2=y_mar8aux2; y2<=y_mar8aux2+14;++y2){
-                if(V.GetPointIntensity(x2,y2)>100){
-                    matrizAlgo27[k1][k2] = 1;
-                } else {
-                    matrizAlgo27[k1][k2] = 0;
-                }
-                if(k==113){  x_novoponto=x2; y_novoponto=y2; }
-                //cout << matrizAlgo27[k1][k2] << " ";
-                k2++;
-            }
-            //cout << endl;
-            k1++;
-        }
-
-        //cout << endl;
-        int result5=0;
-        for(int c1=0; c1<=15;++c1){
-            for(int c2=0; c2<=15;++c2){
-                if(matrizAlgo2[c1][c2]!=matrizAlgo25[c1][c2]){
-                    result5 = result5 + 1;
-                }
-            }
-        }
-        //cout << endl;
-        //cout << "Resultado 4: " << result5 << " " <<endl ;
     }
 }
 
@@ -887,6 +636,7 @@ void display( void )
         //cinza = true;
         Mediana();
         carregaMarcadores(Video, frame);
+        DesenhaEsqueleto(frame);
     }
 
     // avança o nro do frame

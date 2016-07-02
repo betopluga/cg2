@@ -566,7 +566,7 @@
 1331767636 c:\temp\video\imageclassnew3.h
 	<GL\gl.h>
 
-1467342672 source:c:\temp\video\avitest-three.cpp
+1467487937 source:c:\temp\video\avitest-three.cpp
 	<explode.h>
 	<cstdlib>
 	<iostream>
@@ -606,7 +606,7 @@
 	"ImageClassNew3.h"
 	"BmpLib0.h"
 
-1467336072 c:\temp\video\include\marcador.h
+1467389327 c:\temp\video\include\marcador.h
 	<cstdlib>
 	<iostream>
 	<vector>
